@@ -1,0 +1,97 @@
+================================================================================
+BITÁCORA DE USO DE IA — MÓDULO DE HISTORIAL E INTEGRACIÓN
+Módulo: Historial de Transformaciones + main.py (Actividad #4)
+PixelForge MathEngine 2D v1.0
+================================================================================
+
+
+================================================================================
+INTERACCIÓN #1 — Integración del historial con la clase Transformador
+------------------------------------------------------------------------------
+OBJETIVO:
+Integrar el módulo de historial con los métodos rotar(), escalar() y trasladar()
+desarrollados previamente, sin modificar el código ni las interfaces del módulo
+de transformaciones.
+
+PROMPT UTILIZADO:
+"La clase Transformador existente retorna una tupla (objeto_transformado,
+matriz_utilizada) en cada método. ¿Cómo puedo conectar ese resultado con
+HistorialTransformaciones evitando repetir la misma lógica al rotar, escalar o trasladar?"
+
+RESPUESTA OBTENIDA:
+La IA recomendó crear una función auxiliar aplicar_y_registrar(). Esta función
+recibe el historial, el nombre de la operación, el objeto anterior y la tupla
+devuelta por Transformador. Luego separa el objeto y la matriz, registra la
+operación y devuelve el nuevo objeto para continuar el flujo.
+
+DECISIÓN TOMADA POR EL EQUIPO:
+Se aceptó la función auxiliar porque permite reutilizar Transformador sin
+modificarlo. También evita duplicar las instrucciones de registro después de
+cada transformación.
+
+VALIDACIÓN REALIZADA:
+Se aplicaron una rotación y un escalamiento consecutivos. Se comprobó que el
+estado posterior del primer registro coincide con el estado anterior del
+segundo registro y que las matrices almacenadas son las devueltas por
+Transformador.
+
+MODIFICACIONES IMPLEMENTADAS:
+Se implementó aplicar_y_registrar() en historial.py y se utilizó en la función
+de transformaciones consecutivas y en la prueba integrada.
+
+REFLEXIÓN SOBRE LA UTILIDAD DE LA IA:
+La sugerencia permitió integrar módulos desarrollados por distintos miembros
+sin crear dependencias innecesarias ni cambiar código ya probado. El equipo
+verificó que la función auxiliar respetara los tipos de retorno existentes.
+
+================================================================================
+INTERACCIÓN #2 — Composición de transformaciones consecutivas
+------------------------------------------------------------------------------
+OBJETIVO:
+Implementar el ejemplo solicitado en el documento: rotar 30°, escalar por 1.5 y
+finalmente trasladar el objeto. También se requería obtener y mostrar la matriz
+compuesta de las tres transformaciones.
+
+PROMPT UTILIZADO:
+"Explique cómo componer las matrices para aplicar, en este orden, una rotación
+de 30 grados, un escalamiento uniforme de 1.5 y una traslación (2,1). Las matrices de rotación y escala
+son 2x2, mientras que la traslación es una matriz homogénea 3x3."
+
+RESPUESTA OBTENIDA:
+La IA explicó que, al trabajar con vectores columna, la transformación ubicada
+más cerca del vector se aplica primero. Por lo tanto, la composición correcta
+es:
+
+    C = T * S * R
+    punto_final = C * punto_inicial
+
+También recomendó ampliar las matrices 2x2 de rotación y escalamiento a
+matrices homogéneas 3x3 antes de multiplicarlas por la matriz de traslación.
+
+DECISIÓN TOMADA POR EL EQUIPO:
+Se adoptó la composición T * S * R y se creó un método que convierte
+automáticamente matrices 2x2 a matrices homogéneas 3x3. La multiplicación se
+realiza en el mismo orden en que las operaciones aparecen en el historial.
+
+VALIDACIÓN MATEMÁTICA REALIZADA:
+Se compararon los puntos obtenidos al aplicar rotación, escala y traslación de
+forma individual con los puntos calculados mediante la matriz compuesta:
+
+    [[ 1.299038, -0.750000, 2.000000],
+     [ 0.750000,  1.299038, 1.000000],
+     [ 0.000000,  0.000000, 1.000000]]
+
+Los resultados coincidieron dentro de la tolerancia usada para números
+decimales.
+
+MODIFICACIONES IMPLEMENTADAS:
+Se agregaron los métodos _matriz_homogenea(), matriz_compuesta() y
+reconstruir_estado_final(). También se implementó la función
+aplicar_transformaciones_consecutivas().
+
+REFLEXIÓN SOBRE LA UTILIDAD DE LA IA:
+La IA ayudó a aclarar el orden de multiplicación, que puede resultar confuso
+porque las matrices se escriben en el orden inverso al orden en que se aplican
+visualmente las operaciones. La comprobación numérica fue necesaria para
+confirmar la explicación.
+

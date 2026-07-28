@@ -1,0 +1,43 @@
+PSEUDOCÓDIGO: MULTIPLICACIÓN Y COMPOSICIÓN DE MATRICES
+
+FUNCIÓN MULTIPLICAR(A, B)
+    crear resultado con filas(A) y columnas(B)
+    PARA cada fila i de A
+        PARA cada columna j de B
+            resultado[i,j] = 0
+            PARA k desde 0 hasta columnas(A)-1
+                resultado[i,j] += A[i,k] * B[k,j]
+            FIN PARA
+        FIN PARA
+    FIN PARA
+    RETORNAR resultado
+FIN FUNCIÓN
+
+FUNCIÓN APLICAR_TRANSFORMACIONES_CONSECUTIVAS(objeto)
+    historial = nuevo HistorialTransformaciones
+    rotado, R = rotar(objeto, 30 grados)
+    registrar("Rotación", R, objeto, rotado)
+
+    escalado, S = escalar(rotado, 1.5)
+    registrar("Escalamiento", S, rotado, escalado)
+
+    trasladado, T = trasladar(escalado, 2, 1)
+    registrar("Traslación", T, escalado, trasladado)
+
+    compuesta = T * S * R
+    mostrar R, S, T y compuesta
+    RETORNAR trasladado, historial
+FIN FUNCIÓN
+
+EXPLICACIÓN
+
+Cada entrada C[i,j] del producto C = A * B es el producto punto de la fila i
+de A con la columna j de B. Como se usan vectores columna, la operación más
+cercana al punto se ejecuta primero:
+
+    punto_final = T * S * R * punto_inicial
+
+Por eso T * S * R equivale a rotar, luego escalar y finalmente trasladar.
+Las matrices lineales 2x2 se amplían a matrices homogéneas 3x3 antes de
+componerlas con la traslación.
+
