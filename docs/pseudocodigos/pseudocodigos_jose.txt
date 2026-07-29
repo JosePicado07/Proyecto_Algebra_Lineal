@@ -74,4 +74,226 @@ El metodo _convertir_a_matriz acepta tres formatos de entrada:
   - ndarray (N, 2): se transpone automaticamente.
   - lista de tuplas: se convierte a ndarray y luego se transpone.
 
+------------------------------------------------------------------------------
+3. REDUCCIÓN GAUSS-JORDAN Y CÁLCULO DEL RANGO
+------------------------------------------------------------------------------
+Propósito: Reducir una matriz a forma escalonada reducida mediante operaciones
+           elementales propias y contar sus pivotes, sin utilizar
+           numpy.linalg.matrix_rank.
+
+Entrada: matriz A de m filas y n columnas
+Salida:  matriz reducida R y cantidad de pivotes rango
+
+ALGORITMO:
+1.  R ← copia de A convertida a números reales
+2.  fila_pivote ← 0
+3.  PARA cada columna j desde 0 hasta n-1:
+4.      Buscar desde fila_pivote hasta m-1 la primera fila i donde
+        |R[i,j]| > EPSILON.
+5.      Si no existe una fila así, continuar con la columna siguiente.
+6.      Intercambiar R[fila_pivote] con R[i].
+7.      Dividir toda la fila_pivote entre R[fila_pivote,j], de modo que
+        el pivote sea igual a 1.
+8.      PARA cada fila k diferente de fila_pivote:
+9.          Si |R[k,j]| > EPSILON:
+10.             R[k] ← R[k] - R[k,j] * R[fila_pivote]
+11.         FIN SI
+12.     FIN PARA
+13.     fila_pivote ← fila_pivote + 1
+14. FIN PARA
+15. rango ← fila_pivote
+16. Devolver R y rango
+
+Las operaciones de intercambio, multiplicación de una fila por un escalar no
+nulo y suma de un múltiplo de otra fila conservan las relaciones lineales de
+la matriz. Por eso la cantidad de pivotes obtenida coincide con su rango.
+
+VARIANTE ELIMINACIÓN_GAUSSIANA:
+Se siguen los pasos anteriores, pero en el paso 8 se eliminan únicamente las
+filas situadas debajo de la fila pivote. No es necesario eliminar hacia arriba
+cuando solamente se necesita conocer el rango. La cantidad final de pivotes es
+la misma que en Gauss-Jordan.
+
+------------------------------------------------------------------------------
+4. VERIFICAR INDEPENDENCIA LINEAL
+------------------------------------------------------------------------------
+Propósito: Determinar si los vectores recibidos son linealmente independientes.
+
+Entrada: vectores v1, v2, ..., vk escritos como filas de A
+Salida:  verdadero o falso
+
+ALGORITMO:
+1.  R, rango ← GAUSS_JORDAN(A)
+2.  Si rango = cantidad_de_vectores:
+        Devolver verdadero
+3.  De lo contrario:
+        Devolver falso
+
+Justificación:
+Existe un pivote por cada vector exactamente cuando ninguno de ellos puede
+escribirse como combinación lineal de los restantes.
+
+------------------------------------------------------------------------------
+5. ENCONTRAR UNA BASE FORMADA POR VECTORES ORIGINALES
+------------------------------------------------------------------------------
+Propósito: Seleccionar, en el orden recibido, un subconjunto independiente que
+           genere el mismo espacio que todos los vectores.
+
+Entrada: matriz A con un vector por fila
+Salida:  lista indices_base y matriz base
+
+ALGORITMO:
+1.  indices_base ← lista vacía
+2.  rango_actual ← 0
+3.  PARA cada índice i desde 0 hasta cantidad_de_vectores-1:
+4.      candidatos ← filas de A cuyos índices están en indices_base,
+        seguidas por A[i]
+5.      nuevo_rango ← rango obtenido por ELIMINACIÓN_GAUSSIANA(candidatos)
+6.      Si nuevo_rango > rango_actual:
+7.          Agregar i a indices_base
+8.          rango_actual ← nuevo_rango
+9.      FIN SI
+10. FIN PARA
+11. base ← A[indices_base]
+12. Devolver indices_base y base
+
+El nuevo vector se conserva solamente cuando aumenta el rango. De esta forma,
+la base está compuesta por vectores de la entrada y no por combinaciones
+creadas durante la eliminación.
+
+------------------------------------------------------------------------------
+6. DETECTAR INFORMACIÓN REDUNDANTE
+------------------------------------------------------------------------------
+Propósito: Identificar qué vectores no son necesarios para generar el mismo
+           espacio vectorial.
+
+Entrada: matriz A con un vector por fila
+Salida:  índices de vectores redundantes
+
+ALGORITMO:
+1.  indices_base, base ← ENCONTRAR_BASE(A)
+2.  redundantes ← lista vacía
+3.  PARA cada índice i de A:
+4.      Si i no pertenece a indices_base:
+5.          Agregar i a redundantes
+6.      FIN SI
+7.  FIN PARA
+8.  Devolver redundantes
+
+Nota geométrica:
+"Redundante" significa redundante para generar el espacio vectorial. No
+significa automáticamente que el vértice pueda eliminarse del polígono sin
+cambiar su contorno.
+
+------------------------------------------------------------------------------
+7. CALCULAR LA DIMENSIÓN DEL ESPACIO GENERADO
+------------------------------------------------------------------------------
+Propósito: Obtener la cantidad de direcciones independientes generadas por los
+           vectores.
+
+Entrada: matriz A con un vector por fila
+Salida:  dimensión
+
+ALGORITMO:
+1.  matriz_escalonada, rango ← ELIMINACIÓN_GAUSSIANA(A)
+2.  dimensión ← rango
+3.  Devolver dimensión
+
+En R², la dimensión posible es 0 para el espacio cero, 1 para una recta por el
+origen y 2 para todo el plano.
+
+------------------------------------------------------------------------------
+8. VERIFICAR CIERRE DE UNA COLECCIÓN FINITA DE VÉRTICES
+------------------------------------------------------------------------------
+Propósito: Comprobar si las operaciones realizadas con los vértices producen
+           elementos que también aparecen en la colección finita.
+
+Entrada: matriz A con un vector por fila
+Salida:  cierre_suma y cierre_escalar
+
+ALGORITMO PARA SUMA:
+1.  PARA cada par de vectores A[i], A[j], incluyendo i=j:
+2.      suma ← A[i] + A[j]
+3.      Si ninguna fila de A coincide con suma dentro de EPSILON:
+4.          Devolver falso
+5.      FIN SI
+6.  FIN PARA
+7.  Devolver verdadero
+
+ALGORITMO PARA PRODUCTO ESCALAR:
+1.  escalares_prueba ← [0, 1, -1, 2, -2, 0.5]
+2.  PARA cada vector v de A:
+3.      PARA cada escalar λ de escalares_prueba:
+4.          producto ← λ * v
+5.          Si ninguna fila de A coincide con producto dentro de EPSILON:
+6.              Devolver falso
+7.          FIN SI
+8.      FIN PARA
+9.  FIN PARA
+10. Devolver verdadero
+
+Esta operación analiza la colección finita de vértices. El espacio generado
+por esos vértices se analiza por rango, base y dimensión; no debe confundirse
+con la colección finita.
+
+------------------------------------------------------------------------------
+9. ANALIZAR EL CONJUNTO DEFINIDO POR ax + by = c
+------------------------------------------------------------------------------
+Propósito: Determinar si una restricción lineal de posiciones describe un
+           subespacio de R² y mostrar una justificación matemática.
+
+Entrada: coeficientes reales y finitos a, b y c
+Salida:  veredicto de subespacio, comprobaciones de cierre, base, dimensión,
+         cálculos e interpretación geométrica
+
+ALGORITMO:
+1.  Validar que a, b y c sean números finitos.
+2.  Si a=0, b=0 y c=0:
+3.      El conjunto solución es R².
+4.      contiene_cero ← verdadero
+5.      cierre_suma ← verdadero
+6.      cierre_escalar ← verdadero
+7.      base ← [(1,0), (0,1)]
+8.      dimensión ← 2
+9.      Devolver "sí es subespacio".
+10. FIN SI
+11. Si a=0, b=0 y c≠0:
+12.     La igualdad 0=c es imposible y el conjunto es vacío.
+13.     No contiene al vector cero; no tiene base ni dimensión vectorial.
+14.     Devolver "no es subespacio".
+15. FIN SI
+16. Si c=0:
+17.     Verificar el cero:
+            a*0 + b*0 = 0
+18.     Sean u y v dos soluciones. Verificar la suma:
+            a(u1+v1) + b(u2+v2)
+            = (a*u1+b*u2) + (a*v1+b*v2)
+            = 0 + 0 = 0
+19.     Sea λ real. Verificar el producto escalar:
+            a(λ*u1) + b(λ*u2)
+            = λ(a*u1+b*u2) = λ*0 = 0
+20.     base ← [(-b,a)]
+21.     dimensión ← 1
+22.     Devolver "sí es subespacio: recta por el origen".
+23. FIN SI
+24. Si c≠0:
+25.     Verificar que el cero no pertenece porque a*0+b*0=0≠c.
+26.     Construir un punto p del conjunto:
+            Si a≠0, p ← (c/a, 0)
+            De lo contrario, p ← (0, c/b)
+27.     Calcular p+p=2p.
+28.     Como a(2p1)+b(2p2)=2c≠c:
+            cierre_suma ← falso
+            cierre_escalar ← falso usando el escalar 2
+29.     No existe base ni dimensión como subespacio.
+30.     Devolver "no es subespacio: recta afín que no pasa por el origen".
+31. FIN SI
+
+Ejemplos:
+  - x+y=0 sí es subespacio, base [(-1,1)] y dimensión 1.
+  - x+y=10 no es subespacio. El punto p=(10,0) pertenece, pero
+    p+p=(20,0) no pertenece porque 20≠10.
+  - 0x+0y=0 representa todo R².
+  - 0x+0y=1 representa el conjunto vacío.
+
 ================================================================================
