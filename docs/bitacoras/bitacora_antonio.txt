@@ -1,0 +1,83 @@
+================================================================================
+BITÁCORA DE USO DE IA — ANTONIO MORA BLOTTA
+Módulo: Interfaz y documentación final
+PixelForge MathEngine 2D v1.0
+================================================================================
+
+INTERACCIÓN #1 — Comprensión del repositorio y diseño de la interfaz
+------------------------------------------------------------------------------
+OBJETIVO:
+Comprender los módulos desarrollados por el equipo y diseñar una interfaz que
+los integrara sin duplicar los algoritmos matemáticos.
+
+PROMPT UTILIZADO:
+"Explora y entiende el codebase. También adjunté la consigna completa con la rubrica y el
+documento donde llevamos seguimiento. Ayúdame a implementar la interfaz grafica que se
+conecta a la logica existente"
+
+RESPUESTA OBTENIDA:
+La IA revisó la consigna, el seguimiento, los módulos y las pruebas. Propuso
+separar la coordinación del motor en una clase controladora independiente de
+Tkinter y utilizar la ventana únicamente como capa de presentación.
+
+DECISIÓN TOMADA POR EL EQUIPO:
+Se adoptó Motor2DController para coordinar Objeto2D, Transformador,
+HistorialTransformaciones y AnalisadorVectorial. Esto permite probar el flujo
+sin abrir una ventana y reduce el acoplamiento entre la interfaz y la lógica.
+
+VALIDACIÓN MATEMÁTICA REALIZADA:
+Se comprobó que cada operación de la interfaz invoca los métodos existentes,
+que el objeto original permanece sin modificaciones y que la matriz compuesta
+reconstruye el mismo estado final que las transformaciones consecutivas.
+
+MODIFICACIONES IMPLEMENTADAS:
+Se creó src/interfaz.py con selección de figuras, parámetros de
+transformación, secuencia de ejemplo, reinicio, análisis, historial y
+exportación de gráficos. También se corrigió la importación relativa de
+analisis_vectorial.py para permitir la ejecución como paquete.
+
+REFLEXIÓN SOBRE LA UTILIDAD DE LA IA:
+La revisión cruzada entre consigna y código evitó construir una interfaz
+aislada. La separación entre controlador y vista hizo que la propuesta fuera
+más fácil de comprender, probar y mantener.
+
+================================================================================
+INTERACCIÓN #2 — Visualización y pruebas de la experiencia de uso
+------------------------------------------------------------------------------
+OBJETIVO:
+Mostrar simultáneamente la figura original, la transformada, las matrices y
+los resultados del análisis vectorial, según el anexo de la consigna.
+
+PROMPT UTILIZADO:
+"Diseña una interfaz Tkinter clara para comparar una figura 2D antes y después
+de varias transformaciones. Debe integrar Matplotlib, mostrar coordenadas,
+base, dimensión, redundancia e historial de matrices."
+
+RESPUESTA OBTENIDA:
+La IA propuso una ventana de tres zonas: controles a la izquierda, gráficos
+cartesianos al centro y resultados organizados en pestañas a la derecha.
+También sugirió usar una escala común en ambos gráficos para que la comparación
+geométrica no fuera engañosa.
+
+DECISIÓN TOMADA POR EL EQUIPO:
+Se utilizó una paleta institucional azul con un acento naranja, controles
+temáticos de ttk y dos ejes Matplotlib con límites compartidos. Los resultados
+se separaron en coordenadas, análisis e historial para evitar saturar la vista.
+
+VALIDACIÓN MATEMÁTICA REALIZADA:
+Se ejecutó el caso rotar 30 grados, escalar 1.5 y trasladar (2,1). Las
+coordenadas finales y la matriz homogénea T*S*R coincidieron con las pruebas de
+integración. También se verificaron figuras personalizadas y reinicio.
+
+MODIFICACIONES IMPLEMENTADAS:
+Se añadieron cinco pruebas automáticas para la interfaz: composición y
+preservación del original, figura personalizada, análisis, reinicio, validación
+de coordenadas y exportación de PNG.
+
+REFLEXIÓN SOBRE LA UTILIDAD DE LA IA:
+La IA fue especialmente útil para detectar que una comparación visual necesita
+la misma escala en ambos ejes. La captura final fue revisada manualmente para
+confirmar legibilidad, alineación y ausencia de controles recortados.
+
+================================================================================
+

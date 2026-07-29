@@ -1,5 +1,9 @@
 import numpy as np
-from objetos import Objeto2D
+
+try:
+    from objetos import Objeto2D
+except ImportError:
+    from .objetos import Objeto2D
 
 EPSILON = 1e-9
 
