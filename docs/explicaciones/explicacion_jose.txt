@@ -41,4 +41,65 @@ Ventajas del formato:
   - to_lista_tuplas(): Convierte la matriz a formato [(x1,y1), ...].
     Util para reportes y depuracion.
 
+4. RANGO, BASE, DIMENSIÓN E INDEPENDENCIA
+------------------------------------------------------------------------------
+Los vértices también pueden interpretarse como vectores de R². Para estudiar el
+espacio que generan, el programa aplica eliminación de Gauss desarrollada por
+el equipo. La cantidad de pivotes es el rango de la matriz y, por el teorema
+del rango, también es la dimensión del espacio generado por sus filas.
+
+Los vectores son linealmente independientes cuando el rango coincide con la
+cantidad de vectores. Una base se obtiene conservando, en el orden de entrada,
+cada vector que aumente el rango. Los vectores restantes son redundantes para
+generar ese mismo espacio.
+
+Esta redundancia es algebraica. En R² bastan como máximo dos vectores
+independientes para generar el plano, pero un polígono puede necesitar más de
+dos vértices para conservar su contorno. Por eso el resultado no debe
+interpretarse automáticamente como permiso para borrar vértices del dibujo.
+
+5. COLECCIÓN FINITA Y ESPACIO GENERADO
+------------------------------------------------------------------------------
+El programa distingue:
+
+  - La colección finita de vértices introducidos por el usuario.
+  - El espacio vectorial generado por todas sus combinaciones lineales.
+
+El espacio generado siempre es cerrado bajo suma y producto escalar. En cambio,
+una colección finita con vectores no nulos normalmente no es cerrada: una suma
+o un múltiplo puede producir un vector que no aparece en la lista. Por eso las
+comprobaciones verificar_cierre_suma() y verificar_cierre_escalar() buscan
+pertenencia en la colección, mientras que encontrar_base() y
+calcular_dimension() describen el espacio generado.
+
+6. SUBESPACIOS DEFINIDOS POR ax + by = c
+------------------------------------------------------------------------------
+Una restricción de posiciones como:
+
+    S = {(x,y) en R² : ax + by = c}
+
+se analiza separadamente de los vértices.
+
+Si c=0 y al menos uno de a o b es distinto de cero, la ecuación es homogénea.
+El conjunto contiene al origen y es cerrado:
+
+    Si au1+bu2=0 y av1+bv2=0,
+    entonces a(u1+v1)+b(u2+v2)=0.
+
+    Si au1+bu2=0 y λ es real,
+    entonces a(λu1)+b(λu2)=λ(au1+bu2)=0.
+
+Por tanto es una recta subespacio, con base [(-b,a)] y dimensión 1.
+
+Si c≠0, el origen no pertenece porque a*0+b*0=0≠c. Además, si p es una solución,
+el vector 2p produce 2c en el lado izquierdo y no c. Esto brinda un
+contraejemplo tanto para la suma p+p como para el producto escalar 2p.
+
+En particular:
+
+    x+y=10
+
+describe una recta afín que puede representar posiciones válidas, pero no es
+un subespacio de R². El punto (10,0) pertenece y (20,0) no pertenece.
+
 ================================================================================

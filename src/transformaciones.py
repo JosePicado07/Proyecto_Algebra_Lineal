@@ -37,6 +37,13 @@ class Transformador:
             nombre=f"{objeto.nombre}_{sufijo}",
         )
 
+    @staticmethod
+    def _numero_finito(valor, nombre):
+        numero = float(valor)
+        if not math.isfinite(numero):
+            raise ValueError(f"{nombre} debe ser un número finito")
+        return numero
+
     def trasladar(self, objeto, dx, dy):
         """
         Aplica una traslación usando coordenadas homogéneas.
@@ -50,11 +57,13 @@ class Transformador:
         se utiliza una matriz homogénea 3x3.
         """
         self._validar_objeto(objeto)
+        dx = self._numero_finito(dx, "dx")
+        dy = self._numero_finito(dy, "dy")
 
         matriz = np.array(
             [
-                [1.0, 0.0, float(dx)],
-                [0.0, 1.0, float(dy)],
+                [1.0, 0.0, dx],
+                [0.0, 1.0, dy],
                 [0.0, 0.0, 1.0],
             ],
             dtype=np.float64,
@@ -85,7 +94,8 @@ class Transformador:
         """
         self._validar_objeto(objeto)
 
-        theta = math.radians(float(angulo))
+        angulo = self._numero_finito(angulo, "El ángulo")
+        theta = math.radians(angulo)
         c = math.cos(theta)
         s = math.sin(theta)
 
@@ -122,11 +132,13 @@ class Transformador:
 
         if sy is None:
             sy = sx
+        sx = self._numero_finito(sx, "sx")
+        sy = self._numero_finito(sy, "sy")
 
         matriz = np.array(
             [
-                [float(sx), 0.0],
-                [0.0, float(sy)],
+                [sx, 0.0],
+                [0.0, sy],
             ],
             dtype=np.float64,
         )

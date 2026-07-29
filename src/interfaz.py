@@ -180,10 +180,15 @@ class Motor2DController:
             redundancia = f"Los vértices {posiciones} son redundantes respecto al conjunto."
         else:
             redundancia = "No se detectaron vértices redundantes."
+        descripciones = {
+            0: "Los vértices sólo generan el vector cero.",
+            1: "Los vértices generan una recta que pasa por el origen.",
+            2: "Los vértices generan todo el plano R².",
+        }
         interpretacion = (
-            f"La figura genera un subespacio de dimensión {dimension} en R². "
-            f"{redundancia}"
-        )
+            f"El espacio generado por los vértices tiene dimensión {dimension}. "
+            f"{descripciones.get(dimension, '')} {redundancia}"
+        ).strip()
         return ResultadoAnalisis(
             linealmente_independiente=independiente,
             base=base,
@@ -193,6 +198,10 @@ class Motor2DController:
             cierre_escalar=cierre_escalar,
             interpretacion=interpretacion,
         )
+
+    def analizar_subespacio(self, a: float, b: float, c: float):
+        """Analiza el conjunto de posiciones definido por ax + by = c."""
+        return AnalisadorVectorial.analizar_subespacio_ecuacion(a, b, c)
 
 
 def _puntos_cerrados(objeto: Objeto2D) -> tuple[np.ndarray, np.ndarray]:
@@ -290,6 +299,7 @@ class PixelForgeApp:
         self._crear_encabezado()
         self._crear_contenido(FigureCanvasTkAgg)
         self._crear_estado()
+        self._analizar_ecuacion_subespacio()
         self._actualizar_vista("Motor listo. Seleccione una operación.")
 
     def _configurar_estilos(self) -> None:
@@ -378,13 +388,63 @@ class PixelForgeApp:
 
     def _agregar_campo(
         self, padre: Any, fila: int, etiqueta: str, variable: Any, ancho: int = 10
-    ) -> None:
-        self.ttk.Label(padre, text=etiqueta, style="Panel.TLabel").grid(
+    ) -> tuple[Any, Any]:
+        label = self.ttk.Label(padre, text=etiqueta, style="Panel.TLabel")
+        label.grid(
             row=fila, column=0, sticky="w", pady=3
         )
-        self.ttk.Entry(padre, textvariable=variable, width=ancho).grid(
+        entry = self.ttk.Entry(padre, textvariable=variable, width=ancho)
+        entry.grid(
             row=fila, column=1, sticky="ew", pady=3, padx=(8, 0)
         )
+        return label, entry
+
+    @staticmethod
+    def _habilitar(widget: Any, habilitado: bool) -> None:
+        if not habilitado:
+            widget.configure(state="disabled")
+        elif widget.winfo_class() == "TCombobox":
+            widget.configure(state="readonly")
+        else:
+            widget.configure(state="normal")
+
+    def _actualizar_controles_figura(self, *_: Any) -> None:
+        tipo = self.tipo_figura.get().lower()
+        personalizada = tipo == "personalizada"
+        es_cuadrado = tipo == "cuadrado"
+        usa_dos_medidas = tipo in {"triángulo", "rectángulo"}
+
+        etiquetas = {
+            "cuadrado": ("Lado", "Altura"),
+            "triángulo": ("Base", "Altura"),
+            "rectángulo": ("Ancho", "Alto"),
+            "personalizada": ("Medida 1", "Medida 2"),
+        }
+        etiqueta_1, etiqueta_2 = etiquetas.get(tipo, ("Medida 1", "Medida 2"))
+        self.campo_medida_1[0].configure(text=etiqueta_1)
+        self.campo_medida_2[0].configure(text=etiqueta_2)
+
+        self._habilitar(self.campo_medida_1[1], not personalizada)
+        self._habilitar(self.campo_medida_2[1], usa_dos_medidas)
+        self._habilitar(self.entrada_origen_x, not personalizada)
+        self._habilitar(self.entrada_origen_y, not personalizada)
+        self._habilitar(self.entrada_puntos, personalizada)
+
+        if es_cuadrado:
+            self.medida_2.set(self.medida_1.get())
+
+    def _actualizar_controles_transformacion(self, *_: Any) -> None:
+        operacion = self.operacion.get().lower()
+        activos = {
+            "angulo": operacion == "rotar",
+            "sx": operacion == "escalar",
+            "sy": operacion == "escalar",
+            "dx": operacion == "trasladar",
+            "dy": operacion == "trasladar",
+            "eje": operacion == "reflejar",
+        }
+        for nombre, campo in self.campos_transformacion.items():
+            self._habilitar(campo, activos[nombre])
 
     def _crear_panel_controles(self, padre: Any) -> None:
         padre.columnconfigure(1, weight=1)
@@ -418,18 +478,29 @@ class PixelForgeApp:
             width=16,
         ).grid(row=fila, column=1, sticky="ew", padx=(8, 0), pady=3)
         fila += 1
-        self._agregar_campo(padre, fila, "Lado/Base/Ancho", self.medida_1)
+        self.campo_medida_1 = self._agregar_campo(
+            padre, fila, "Lado", self.medida_1
+        )
         fila += 1
-        self._agregar_campo(padre, fila, "Altura", self.medida_2)
+        self.campo_medida_2 = self._agregar_campo(
+            padre, fila, "Altura", self.medida_2
+        )
         fila += 1
-        self._agregar_campo(padre, fila, "Origen x", self.origen_x)
+        _, self.entrada_origen_x = self._agregar_campo(
+            padre, fila, "Origen x", self.origen_x
+        )
         fila += 1
-        self._agregar_campo(padre, fila, "Origen y", self.origen_y)
+        _, self.entrada_origen_y = self._agregar_campo(
+            padre, fila, "Origen y", self.origen_y
+        )
         fila += 1
         self.ttk.Label(padre, text="Puntos x,y; ...", style="Panel.TLabel").grid(
             row=fila, column=0, sticky="w", pady=3
         )
-        self.ttk.Entry(padre, textvariable=self.puntos, width=22).grid(
+        self.entrada_puntos = self.ttk.Entry(
+            padre, textvariable=self.puntos, width=22
+        )
+        self.entrada_puntos.grid(
             row=fila, column=1, sticky="ew", padx=(8, 0), pady=3
         )
         fila += 1
@@ -460,26 +531,43 @@ class PixelForgeApp:
             width=16,
         ).grid(row=fila, column=1, sticky="ew", padx=(8, 0), pady=3)
         fila += 1
-        self._agregar_campo(padre, fila, "Ángulo (°)", self.angulo)
+        _, entrada_angulo = self._agregar_campo(
+            padre, fila, "Ángulo (°)", self.angulo
+        )
         fila += 1
-        self._agregar_campo(padre, fila, "Escala sx", self.sx)
+        _, entrada_sx = self._agregar_campo(padre, fila, "Escala sx", self.sx)
         fila += 1
-        self._agregar_campo(padre, fila, "Escala sy", self.sy)
+        _, entrada_sy = self._agregar_campo(padre, fila, "Escala sy", self.sy)
         fila += 1
-        self._agregar_campo(padre, fila, "Traslación dx", self.dx)
+        _, entrada_dx = self._agregar_campo(
+            padre, fila, "Traslación dx", self.dx
+        )
         fila += 1
-        self._agregar_campo(padre, fila, "Traslación dy", self.dy)
+        _, entrada_dy = self._agregar_campo(
+            padre, fila, "Traslación dy", self.dy
+        )
         fila += 1
         self.ttk.Label(padre, text="Eje reflexión", style="Panel.TLabel").grid(
             row=fila, column=0, sticky="w", pady=3
         )
-        self.ttk.Combobox(
+        self.entrada_eje = self.ttk.Combobox(
             padre,
             textvariable=self.eje,
             values=("x", "y", "y=x"),
             state="readonly",
             width=10,
-        ).grid(row=fila, column=1, sticky="ew", padx=(8, 0), pady=3)
+        )
+        self.entrada_eje.grid(
+            row=fila, column=1, sticky="ew", padx=(8, 0), pady=3
+        )
+        self.campos_transformacion = {
+            "angulo": entrada_angulo,
+            "sx": entrada_sx,
+            "sy": entrada_sy,
+            "dx": entrada_dx,
+            "dy": entrada_dy,
+            "eje": self.entrada_eje,
+        }
         fila += 1
         self.ttk.Button(
             padre,
@@ -499,6 +587,13 @@ class PixelForgeApp:
         self.ttk.Button(
             padre, text="Guardar gráfico PNG", command=self._guardar_grafico
         ).grid(row=fila, column=0, columnspan=2, sticky="ew", pady=3)
+        self.tipo_figura.trace_add("write", self._actualizar_controles_figura)
+        self.medida_1.trace_add("write", self._actualizar_controles_figura)
+        self.operacion.trace_add(
+            "write", self._actualizar_controles_transformacion
+        )
+        self._actualizar_controles_figura()
+        self._actualizar_controles_transformacion()
 
     def _crear_panel_resultados(self, padre: Any) -> None:
         from tkinter import scrolledtext
@@ -514,8 +609,43 @@ class PixelForgeApp:
         self.texto_historial = scrolledtext.ScrolledText(
             notebook, wrap="word", font=("Consolas", 9), padx=10, pady=10
         )
+        panel_subespacio = self.ttk.Frame(notebook, padding=10)
+        panel_subespacio.columnconfigure(0, weight=1)
+        panel_subespacio.rowconfigure(1, weight=1)
+        controles_subespacio = self.ttk.Frame(panel_subespacio)
+        controles_subespacio.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        self.subespacio_a = self.tk.StringVar(value="1")
+        self.subespacio_b = self.tk.StringVar(value="1")
+        self.subespacio_c = self.tk.StringVar(value="10")
+        for columna, (etiqueta, variable) in enumerate(
+            (
+                ("a", self.subespacio_a),
+                ("b", self.subespacio_b),
+                ("c", self.subespacio_c),
+            )
+        ):
+            self.ttk.Label(controles_subespacio, text=etiqueta).grid(
+                row=0, column=columna * 2, padx=(0, 3)
+            )
+            self.ttk.Entry(
+                controles_subespacio, textvariable=variable, width=7
+            ).grid(row=0, column=columna * 2 + 1, padx=(0, 8))
+        self.ttk.Button(
+            controles_subespacio,
+            text="Analizar ax + by = c",
+            command=self._analizar_ecuacion_subespacio,
+        ).grid(row=0, column=6, padx=(4, 0))
+        self.texto_subespacio = scrolledtext.ScrolledText(
+            panel_subespacio,
+            wrap="word",
+            font=("Consolas", 9),
+            padx=10,
+            pady=10,
+        )
+        self.texto_subespacio.grid(row=1, column=0, sticky="nsew")
         notebook.add(self.texto_resultado, text="Coordenadas")
-        notebook.add(self.texto_analisis, text="Análisis")
+        notebook.add(self.texto_analisis, text="Vectores")
+        notebook.add(panel_subespacio, text="Subespacio")
         notebook.add(self.texto_historial, text="Historial")
 
     def _crear_estado(self) -> None:
@@ -540,13 +670,21 @@ class PixelForgeApp:
 
     def _crear_figura(self) -> None:
         try:
+            tipo = self.tipo_figura.get().lower()
+            parametros: dict[str, Any] = {"puntos": self.puntos.get()}
+            if tipo != "personalizada":
+                parametros.update(
+                    medida_1=self._numero(self.medida_1, "Lado/Base/Ancho"),
+                    origen_x=self._numero(self.origen_x, "Origen x"),
+                    origen_y=self._numero(self.origen_y, "Origen y"),
+                )
+            if tipo in {"triángulo", "rectángulo"}:
+                parametros["medida_2"] = self._numero(
+                    self.medida_2, "Altura"
+                )
             self.controlador.crear_figura(
                 self.tipo_figura.get(),
-                medida_1=self._numero(self.medida_1, "Lado/Base/Ancho"),
-                medida_2=self._numero(self.medida_2, "Altura"),
-                origen_x=self._numero(self.origen_x, "Origen x"),
-                origen_y=self._numero(self.origen_y, "Origen y"),
-                puntos=self.puntos.get(),
+                **parametros,
             )
             self._actualizar_vista(f"{self.tipo_figura.get()} creada correctamente.")
         except (TypeError, ValueError) as exc:
@@ -554,14 +692,21 @@ class PixelForgeApp:
 
     def _aplicar_transformacion(self) -> None:
         try:
-            parametros = {
-                "angulo": self._numero(self.angulo, "Ángulo"),
-                "sx": self._numero(self.sx, "Escala sx"),
-                "sy": self._numero(self.sy, "Escala sy"),
-                "dx": self._numero(self.dx, "Traslación dx"),
-                "dy": self._numero(self.dy, "Traslación dy"),
-                "eje": self.eje.get(),
-            }
+            operacion = self.operacion.get().lower()
+            if operacion == "rotar":
+                parametros = {"angulo": self._numero(self.angulo, "Ángulo")}
+            elif operacion == "escalar":
+                parametros = {
+                    "sx": self._numero(self.sx, "Escala sx"),
+                    "sy": self._numero(self.sy, "Escala sy"),
+                }
+            elif operacion == "trasladar":
+                parametros = {
+                    "dx": self._numero(self.dx, "Traslación dx"),
+                    "dy": self._numero(self.dy, "Traslación dy"),
+                }
+            else:
+                parametros = {"eje": self.eje.get()}
             self.controlador.aplicar_transformacion(
                 self.operacion.get(), **parametros
             )
@@ -594,6 +739,47 @@ class PixelForgeApp:
         if ruta:
             self.figura.savefig(ruta, dpi=180, bbox_inches="tight", facecolor="white")
             self.estado.set(f"Gráfico guardado en {ruta}")
+
+    def _analizar_ecuacion_subespacio(self) -> None:
+        try:
+            resultado = self.controlador.analizar_subespacio(
+                self._numero(self.subespacio_a, "a"),
+                self._numero(self.subespacio_b, "b"),
+                self._numero(self.subespacio_c, "c"),
+            )
+
+            def estado(valor: bool | None) -> str:
+                if valor is None:
+                    return "No aplica"
+                return "Sí" if valor else "No"
+
+            if resultado.dimension is None:
+                dimension = "No aplica"
+                base = "No aplica"
+            else:
+                dimension = str(resultado.dimension)
+                base = self._formatear_matriz(resultado.base)
+            calculos = "\n".join(
+                f"{numero}. {calculo}"
+                for numero, calculo in enumerate(resultado.calculos, start=1)
+            )
+            texto = (
+                "ANÁLISIS DE ESPACIO O SUBESPACIO\n\n"
+                f"S = {{(x,y) ∈ R² : {resultado.ecuacion}}}\n\n"
+                f"Contiene al vector cero: {estado(resultado.contiene_cero)}\n"
+                f"Cierre bajo suma: {estado(resultado.cierre_suma)}\n"
+                f"Cierre bajo producto escalar: "
+                f"{estado(resultado.cierre_escalar)}\n"
+                f"¿Es subespacio de R²?: {estado(resultado.es_subespacio)}\n"
+                f"Dimensión: {dimension}\n"
+                f"Base:\n{base}\n\n"
+                f"CÁLCULOS Y JUSTIFICACIÓN\n{calculos}\n\n"
+                f"INTERPRETACIÓN GEOMÉTRICA\n{resultado.interpretacion}"
+            )
+            self._escribir(self.texto_subespacio, texto)
+            self.estado.set(f"Ecuación analizada: {resultado.ecuacion}")
+        except (TypeError, ValueError) as exc:
+            self._mostrar_error(str(exc))
 
     def _mostrar_error(self, mensaje: str) -> None:
         from tkinter import messagebox
@@ -630,9 +816,26 @@ class PixelForgeApp:
         )
         if self.controlador.historial.registros:
             ultima = self.controlador.historial.registros[-1]
+            matriz = np.asarray(ultima.matriz)
+            operandos = ultima.estado_antes
+            if matriz.shape == (3, 3):
+                operandos = np.vstack(
+                    [operandos, np.ones((1, operandos.shape[1]))]
+                )
+            resultado_matricial = matriz @ operandos
+            proyeccion = ""
+            if resultado_matricial.shape[0] == 3:
+                proyeccion = (
+                    "\nSe toman las primeras dos filas:\n"
+                    f"{self._formatear_matriz(ultima.estado_despues)}"
+                )
             texto_coordenadas += (
                 "\n\nÚLTIMA MATRIZ UTILIZADA\n"
-                f"{ultima.nombre}\n{self._formatear_matriz(ultima.matriz)}"
+                f"{ultima.nombre}\n{self._formatear_matriz(matriz)}\n\n"
+                "CÁLCULO REALIZADO\n"
+                f"M · P = P'\n{self._formatear_matriz(matriz)}\n×\n"
+                f"{self._formatear_matriz(operandos)}\n=\n"
+                f"{self._formatear_matriz(resultado_matricial)}{proyeccion}"
             )
         else:
             texto_coordenadas += "\n\nÚLTIMA MATRIZ UTILIZADA\nSin transformaciones."
@@ -649,10 +852,12 @@ class PixelForgeApp:
             f"Independencia lineal: {'Sí' if analisis.linealmente_independiente else 'No'}\n"
             f"Dimensión: {analisis.dimension}\n"
             f"Vértices redundantes: {red}\n"
-            f"Cierre bajo suma: {'Cumple' if analisis.cierre_suma else 'No cumple'}\n"
-            f"Cierre bajo producto escalar: "
+            f"Conjunto de vértices cerrado bajo suma: "
+            f"{'Sí' if analisis.cierre_suma else 'No'}\n"
+            f"Cerrado para escalares 0, ±1, ±2 y 0.5: "
             f"{'Cumple' if analisis.cierre_escalar else 'No cumple'}\n\n"
-            f"Base encontrada:\n{self._formatear_matriz(analisis.base)}\n\n"
+            f"Base del espacio generado (vértices conservados):\n"
+            f"{self._formatear_matriz(analisis.base)}\n\n"
             f"Interpretación geométrica:\n{analisis.interpretacion}"
         )
         self._escribir(self.texto_analisis, texto_analisis)
@@ -664,7 +869,9 @@ class PixelForgeApp:
             ):
                 bloques.append(
                     f"{numero}. {registro.nombre}\n"
-                    f"{self._formatear_matriz(registro.matriz)}"
+                    f"Matriz:\n{self._formatear_matriz(registro.matriz)}\n"
+                    f"Antes:\n{self._formatear_matriz(registro.estado_antes)}\n"
+                    f"Después:\n{self._formatear_matriz(registro.estado_despues)}"
                 )
             bloques.append(
                 "MATRIZ COMPUESTA HOMOGÉNEA\n"
@@ -695,6 +902,12 @@ def ejecutar_demo_cli(ruta_grafico: str | Path | None = None) -> Motor2DControll
     print(f"\nDimensión: {analisis.dimension}")
     print(f"Base:\n{np.round(analisis.base, 6)}")
     print(f"Índices redundantes: {list(analisis.redundantes)}")
+    subespacio = controlador.analizar_subespacio(1.0, 1.0, 10.0)
+    print(f"\nANÁLISIS DEL CONJUNTO {subespacio.ecuacion}")
+    print(f"¿Es subespacio de R²?: {subespacio.es_subespacio}")
+    for calculo in subespacio.calculos:
+        print(f"- {calculo}")
+    print(f"Interpretación: {subespacio.interpretacion}")
     if ruta_grafico:
         destino = guardar_comparacion(
             ruta_grafico, controlador.objeto_original, controlador.objeto_actual

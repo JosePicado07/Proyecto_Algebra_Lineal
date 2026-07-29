@@ -13,7 +13,10 @@ vectores resultantes. El proyecto fue desarrollado para el curso FUN-06
 - Transformaciones consecutivas con historial de matrices y estados.
 - Matriz homogénea compuesta para reconstruir el resultado final.
 - Análisis de independencia lineal, base, dimensión y redundancia.
-- Verificación de cierre bajo suma y multiplicación escalar.
+- Verificación de cierre del conjunto finito de vértices bajo suma y una
+  muestra explícita de multiplicaciones escalares.
+- Análisis de conjuntos definidos por `ax + by = c`, con verificación de
+  subespacio, base, dimensión, cálculos y contraejemplos.
 - Interfaz Tkinter con gráficos Matplotlib del estado original y transformado.
 - Modo de demostración por consola para entornos sin interfaz gráfica.
 
@@ -61,7 +64,10 @@ La ventana permite:
 3. Aplicar varias operaciones seguidas.
 4. Comparar los gráficos original y transformado.
 5. Consultar coordenadas, última matriz, análisis e historial.
-6. Exportar la comparación como imagen PNG.
+6. Consultar el desarrollo matricial de la última operación.
+7. Analizar en la pestaña `Subespacio` una restricción como `x + y = 10`,
+   ingresando `a=1`, `b=1` y `c=10`.
+8. Exportar la comparación como imagen PNG.
 
 Para una figura personalizada, ingrese al menos tres puntos separados por
 punto y coma:
@@ -101,12 +107,13 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 La verificación cubre creación y clonación de objetos, algoritmos de análisis,
 las cuatro transformaciones, composición e historial, integración completa y
-la lógica independiente de la interfaz.
+la lógica independiente de la interfaz. También valida rectas homogéneas,
+rectas afines, todo `R²` y el conjunto vacío en el análisis de subespacios.
 
 ## Estructura
 
 ```text
-PixelForge_v1.0/
+Proyecto_Algebra_Lineal/
 ├── src/
 │   ├── objetos.py
 │   ├── transformaciones.py
@@ -118,13 +125,11 @@ PixelForge_v1.0/
 │   ├── test_analisis.py
 │   ├── test_transformaciones.py
 │   ├── test_integracion.py
+│   ├── test_subespacios.py
 │   └── test_interfaz.py
 ├── docs/
-│   ├── Informe_Tecnico.pdf
-│   ├── Bitacora_IA_Grupal.pdf
 │   ├── bitacoras/
 │   ├── explicaciones/
-│   ├── imagenes/
 │   └── pseudocodigos/
 ├── requirements.txt
 └── README.md
@@ -138,10 +143,19 @@ traslación usa coordenadas homogéneas `3×3`. El análisis de rango, base e
 independencia utiliza eliminaciones propias; no emplea
 `numpy.linalg.matrix_rank`, `numpy.linalg.inv` ni `numpy.linalg.eig`.
 
-En el análisis de una colección finita de vértices, las verificaciones de
-cierre determinan si las combinaciones evaluadas pertenecen al subespacio
-generado por esos vectores. No enumeran todos los elementos de un subespacio
-infinito.
+El programa distingue entre el conjunto finito de vértices y el espacio
+vectorial que esos vértices generan. La base y la dimensión corresponden al
+espacio generado. El cierre bajo suma se comprueba contra el conjunto finito;
+el cierre escalar se evalúa con los escalares `0`, `±1`, `±2` y `0.5`. Esta
+última comprobación encuentra contraejemplos útiles, pero no pretende enumerar
+todos los escalares reales.
+
+Las restricciones de posiciones se analizan por separado como conjuntos
+solución de `ax + by = c`. Si `c=0`, una ecuación no trivial describe una recta
+por el origen y sí es un subespacio de dimensión 1. Si `c≠0`, describe una
+recta afín que no contiene al vector cero; el programa muestra un punto del
+conjunto y comprueba que su suma consigo mismo y su múltiplo por 2 no
+pertenecen.
 
 ## Solución de problemas
 
@@ -152,4 +166,3 @@ infinito.
 - Si trabaja en un servidor sin pantalla, use el modo `--demo`.
 - Los ángulos se ingresan en grados y los ejes de reflexión válidos son `x`,
   `y` y `y=x`.
-

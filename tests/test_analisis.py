@@ -144,7 +144,8 @@ print("=" * 60)
 
 redundantes = av4.detectar_redundantes()
 print(f"Indices redundantes: {redundantes}")
-assert len(redundantes) >= 4
+assert redundantes == [2, 3, 4, 5]
+assert np.array_equal(base, np.array([[1.0, 0.0], [0.0, 1.0]]))
 print("[OK] Redundancia detectada")
 
 print()
@@ -157,9 +158,13 @@ av5 = AnalisadorVectorial(base_ej)
 cs = av5.verificar_cierre_suma()
 ce = av5.verificar_cierre_escalar()
 print(f"Cierre suma: {cs}, Cierre escalar: {ce}")
-assert cs == True
-assert ce == True
-print("[OK] Cierre de subespacio verificado")
+assert cs == False
+assert ce == False
+
+solo_cero = AnalisadorVectorial(Objeto2D([(0, 0)], nombre="Subespacio cero"))
+assert solo_cero.verificar_cierre_suma() == True
+assert solo_cero.verificar_cierre_escalar() == True
+print("[OK] El conjunto finito se distingue de su espacio generado")
 
 print()
 print("=" * 60)
@@ -177,6 +182,7 @@ print(f"Dimension: {dim6}")
 print(f"Base:\n{base6}")
 print(f"Redundantes (indices): {red6}")
 assert dim6 == 2
+assert red6 == [0, 3]
 assert 3 in red6
 print("[OK] Punto interior detectado como redundante")
 

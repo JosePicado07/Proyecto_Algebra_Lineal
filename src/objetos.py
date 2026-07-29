@@ -4,6 +4,10 @@ class Objeto2D:
     def __init__(self, puntos, nombre="Figura"):
         self.nombre = nombre
         arr = self._convertir_a_matriz(puntos)
+        if arr.shape[1] == 0:
+            raise ValueError("El objeto debe contener al menos un punto")
+        if not np.isfinite(arr).all():
+            raise ValueError("Las coordenadas deben ser números finitos")
         self.puntos = arr
         self.n = arr.shape[1]
 
@@ -53,6 +57,9 @@ class Objeto2D:
 
 
 def crear_cuadrado(lado=2.0, origen=(0.0, 0.0)):
+    lado = float(lado)
+    if not np.isfinite(lado) or lado <= 0:
+        raise ValueError("El lado debe ser un número finito mayor que cero")
     x0, y0 = origen
     pts = [
         [x0,       y0],
@@ -64,6 +71,9 @@ def crear_cuadrado(lado=2.0, origen=(0.0, 0.0)):
 
 
 def crear_triangulo(base=2.0, altura=2.0, origen=(0.0, 0.0)):
+    base, altura = float(base), float(altura)
+    if not np.isfinite([base, altura]).all() or base <= 0 or altura <= 0:
+        raise ValueError("La base y la altura deben ser números finitos mayores que cero")
     x0, y0 = origen
     pts = [
         [x0,          y0],
@@ -74,6 +84,9 @@ def crear_triangulo(base=2.0, altura=2.0, origen=(0.0, 0.0)):
 
 
 def crear_rectangulo(ancho=3.0, alto=2.0, origen=(0.0, 0.0)):
+    ancho, alto = float(ancho), float(alto)
+    if not np.isfinite([ancho, alto]).all() or ancho <= 0 or alto <= 0:
+        raise ValueError("El ancho y el alto deben ser números finitos mayores que cero")
     x0, y0 = origen
     pts = [
         [x0,        y0],

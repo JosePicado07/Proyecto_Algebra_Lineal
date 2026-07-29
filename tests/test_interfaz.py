@@ -39,7 +39,39 @@ class TestMotor2DController(unittest.TestCase):
         self.assertEqual(controlador.objeto_actual.n, 4)
         self.assertEqual(resultado.dimension, 2)
         self.assertFalse(resultado.linealmente_independiente)
-        self.assertGreaterEqual(len(resultado.redundantes), 2)
+        self.assertEqual(resultado.redundantes, (2, 3))
+        self.assertFalse(resultado.cierre_suma)
+        self.assertFalse(resultado.cierre_escalar)
+
+    def test_analiza_restriccion_de_subespacio_independiente_de_los_vertices(self):
+        controlador = Motor2DController()
+
+        afin = controlador.analizar_subespacio(1, 1, 10)
+        homogenea = controlador.analizar_subespacio(1, 1, 0)
+
+        self.assertFalse(afin.es_subespacio)
+        self.assertTrue(homogenea.es_subespacio)
+        self.assertEqual(homogenea.dimension, 1)
+
+    def test_cuadrado_ignora_altura_y_conserva_lados_iguales(self):
+        controlador = Motor2DController()
+        cuadrado = controlador.crear_figura(
+            "Cuadrado", medida_1=3, medida_2=-99, origen_x=1, origen_y=2
+        )
+
+        np.testing.assert_array_equal(
+            cuadrado.puntos,
+            np.array([[1.0, 4.0, 4.0, 1.0], [2.0, 2.0, 5.0, 5.0]]),
+        )
+
+    def test_rechaza_coordenadas_y_transformaciones_no_finitas(self):
+        controlador = Motor2DController()
+        with self.assertRaisesRegex(ValueError, "finit"):
+            controlador.crear_figura(
+                "Personalizada", puntos="0,0; 1,0; nan,2"
+            )
+        with self.assertRaisesRegex(ValueError, "finit"):
+            controlador.aplicar_transformacion("Rotar", angulo=float("inf"))
 
     def test_reiniciar_restaura_figura_y_limpia_historial(self):
         controlador = Motor2DController()
