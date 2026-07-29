@@ -1,0 +1,220 @@
+================================================================================
+EXPLICACIÓN MATEMÁTICA — MARCOS
+Módulo: Historial de Transformaciones e Integración (Actividad #4)
+PixelForge MathEngine 2D v1.0
+================================================================================
+
+1. PROPÓSITO DEL HISTORIAL DE TRANSFORMACIONES
+------------------------------------------------------------------------------
+El historial permite conservar todas las modificaciones realizadas sobre un
+Objeto2D. Para cada transformación se almacena:
+
+  - El nombre de la operación aplicada.
+  - La matriz utilizada.
+  - El estado del objeto antes de la transformación.
+  - El estado del objeto después de la transformación.
+
+Los estados se guardan mediante copias independientes de las matrices NumPy.
+Esto evita que una modificación posterior del objeto cambie accidentalmente
+los datos almacenados en el historial.
+
+Por ejemplo, si un cuadrado se rota y luego se escala, el historial contiene
+dos registros:
+
+    Registro 1: cuadrado original → rotación → cuadrado rotado
+    Registro 2: cuadrado rotado  → escala   → cuadrado escalado
+
+El estado posterior del primer registro coincide con el estado anterior del
+segundo. De esta manera se puede reconstruir la secuencia completa.
+
+================================================================================
+2. MULTIPLICACIÓN DE MATRICES
+------------------------------------------------------------------------------
+Dos matrices A y B se pueden multiplicar cuando el número de columnas de A es
+igual al número de filas de B.
+
+Si:
+
+    A tiene dimensiones m x n
+    B tiene dimensiones n x p
+
+entonces el resultado C = A * B tiene dimensiones m x p.
+
+Cada elemento de C se obtiene multiplicando los elementos correspondientes de
+una fila de A por una columna de B y sumando los productos:
+
+    C[i,j] = A[i,1]*B[1,j] + A[i,2]*B[2,j] + ... + A[i,n]*B[n,j]
+
+Ejemplo:
+
+        [a  b]       [e  f]       [a*e + b*g   a*f + b*h]
+    A = [c  d]   B = [g  h]   C = [c*e + d*g   c*f + d*h]
+
+La multiplicación de matrices no es conmutativa. En general:
+
+    A * B ≠ B * A
+
+Esto significa que el orden de las transformaciones afecta el resultado final.
+
+================================================================================
+3. APLICACIÓN DE UNA MATRIZ A UN OBJETO 2D
+------------------------------------------------------------------------------
+Los puntos de un Objeto2D se almacenan en una matriz P de tamaño 2xN:
+
+        [x1  x2  ...  xN]
+    P = [y1  y2  ...  yN]
+
+Cada columna representa un punto (x,y)^T. Una transformación lineal con matriz
+M de tamaño 2x2 se aplica mediante:
+
+    P' = M * P
+
+Como M se multiplica por todos los puntos al mismo tiempo, el resultado P'
+conserva el formato 2xN.
+
+Por ejemplo, para una rotación:
+
+        [cos(theta)  -sen(theta)]
+    R = [sen(theta)   cos(theta)]
+
+se calcula:
+
+    P_rotado = R * P_original
+
+================================================================================
+4. COORDENADAS HOMOGÉNEAS
+------------------------------------------------------------------------------
+Las matrices de rotación y escalamiento del proyecto tienen dimensiones 2x2.
+Sin embargo, la traslación utiliza una matriz 3x3 porque no es una
+transformación lineal pura en R².
+
+Para combinar todas las operaciones, cada matriz 2x2 se amplía a una matriz
+homogénea 3x3:
+
+        [a  b]             [a  b  0]
+    M = [c  d]      M_h =  [c  d  0]
+                          [0  0  1]
+
+También se agrega una tercera coordenada igual a 1 a cada punto:
+
+        [x]
+    p = [y]
+        [1]
+
+La matriz de traslación es:
+
+        [1  0  dx]
+    T = [0  1  dy]
+        [0  0   1]
+
+Al multiplicar T por el punto homogéneo se obtiene:
+
+        [x + dx]
+    T*p=[y + dy]
+        [   1  ]
+
+================================================================================
+5. COMPOSICIÓN DE TRANSFORMACIONES
+------------------------------------------------------------------------------
+El ejemplo utilizado en el módulo aplica las operaciones en este orden:
+
+    1. Rotar 30 grados.
+    2. Escalar uniformemente por 1.5.
+    3. Trasladar por el vector (2,1).
+
+Como los puntos se representan mediante vectores columna, la matriz que está
+más cerca del punto se aplica primero. Por esta razón, la composición es:
+
+    C = T * S * R
+
+y el estado final se calcula mediante:
+
+    P_final = C * P_inicial
+    P_final = T * S * R * P_inicial
+
+Aunque la rotación es la primera operación aplicada, su matriz aparece a la
+derecha en la composición.
+
+Las matrices homogéneas utilizadas son:
+
+                    [ cos(30°)  -sen(30°)  0]
+    Rotación:   R = [ sen(30°)   cos(30°)  0]
+                    [    0           0      1]
+
+                    [1.5   0    0]
+    Escala:     S = [ 0   1.5   0]
+                    [ 0    0    1]
+
+                    [1  0  2]
+    Traslación: T = [0  1  1]
+                    [0  0  1]
+
+El producto T * S * R produce:
+
+        [1.299038  -0.750000  2.000000]
+    C = [0.750000   1.299038  1.000000]
+        [0.000000   0.000000  1.000000]
+
+Esta matriz permite aplicar las tres transformaciones mediante una sola
+multiplicación.
+
+================================================================================
+6. MATRICES INTERMEDIAS Y RECONSTRUCCIÓN
+------------------------------------------------------------------------------
+Además de calcular la composición final, el historial conserva las matrices
+individuales R, S y T. Esto permite mostrar cómo cambió el objeto después de
+cada paso y no solamente el resultado final.
+
+La reconstrucción toma el objeto inicial y aplica la matriz compuesta:
+
+    puntos_homogéneos = agregar_fila_de_unos(P_inicial)
+    resultado_homogéneo = C * puntos_homogéneos
+    P_reconstruido = primeras_dos_filas(resultado_homogéneo)
+
+El objeto reconstruido debe coincidir con el objeto obtenido al aplicar las
+transformaciones una por una. Esta equivalencia se verifica en
+test_integracion.py mediante una comparación numérica aproximada.
+
+================================================================================
+7. IMPORTANCIA DEL ORDEN
+------------------------------------------------------------------------------
+Cambiar el orden de las matrices cambia el resultado. Por ejemplo:
+
+    T * R * P
+
+primero rota el objeto y después lo traslada. En cambio:
+
+    R * T * P
+
+primero traslada el objeto y luego rota también el desplazamiento respecto al
+origen. Aunque se utilizan las mismas matrices, las posiciones finales son
+diferentes.
+
+Por este motivo, HistorialTransformaciones recorre los registros en el orden en
+que fueron aplicados y agrega cada nueva matriz por la izquierda:
+
+    compuesta = matriz_actual * compuesta
+
+Así se conserva correctamente la secuencia registrada.
+
+================================================================================
+8. RELACIÓN CON EL FLUJO PRINCIPAL
+------------------------------------------------------------------------------
+El archivo main.py integra los módulos del proyecto mediante el siguiente
+flujo:
+
+    Crear Objeto2D
+          ↓
+    Aplicar transformaciones
+          ↓
+    Registrar matrices y estados
+          ↓
+    Mostrar historial y composición
+          ↓
+    Analizar el objeto final
+
+La integración demuestra que la multiplicación de matrices no solo permite
+transformar figuras, sino también conservar y reproducir todo el proceso de
+modificación realizado sobre un objeto del escenario.
+
+================================================================================
