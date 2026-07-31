@@ -80,4 +80,45 @@ la misma escala en ambos ejes. La captura final fue revisada manualmente para
 confirmar legibilidad, alineación y ausencia de controles recortados.
 
 ================================================================================
+INTERACCIÓN #3 — Auditoría de consigna y documentación final
+------------------------------------------------------------------------------
+OBJETIVO:
+Comparar la consigna completa con el documento de seguimiento, identificar
+requisitos omitidos y completar el informe técnico y la bitácora grupal con
+evidencia verificable del repositorio.
 
+PROMPT UTILIZADO:
+"En este repo está la consigna en PDF completa de lo que hay que hacer. Revisa contra la consigna PDF (source of
+truth) que el DOCX no dejó nada por fuera. Luego ayúdame a completar la
+documentación que falta con el contenido que ya tenemos."
+
+RESPUESTA OBTENIDA:
+La IA extrajo y revisó las trece páginas de la consigna, leyó la estructura del
+DOCX, inspeccionó código y documentos y ejecutó las pruebas. Detectó que el
+seguimiento no hacía explícitos los cálculos realizados, la interpretación
+geométrica, las mejoras del programa, el mínimo de casos de prueba y la
+retroalimentación docente.
+
+DECISIÓN TOMADA POR EL EQUIPO:
+Se decidió integrar la revisión bibliográfica y el informe técnico en un solo
+PDF, conservar fuentes editables en Markdown, consolidar las bitácoras
+individuales y crear una matriz de trazabilidad requisito por requisito. No se
+inventó retroalimentación docente que no estuviera disponible.
+
+VALIDACIÓN MATEMÁTICA REALIZADA:
+Se ejecutaron 14 casos unittest y 15 escenarios adicionales con aserciones,
+todos sin errores. Se reprodujo la matriz compuesta C=T*S*R, los puntos finales,
+la base y dimensión, y el contraejemplo que demuestra que x+y=10 no es
+subespacio.
+
+MODIFICACIONES IMPLEMENTADAS:
+Se generaron Informe_Tecnico.pdf, Bitacora_IA_Grupal.pdf, sus fuentes editables,
+figuras reproducibles y docs/MATRIZ_CUMPLIMIENTO.md. También se actualizó el
+DOCX de seguimiento con los requisitos explícitos y los estados reales.
+
+REFLEXIÓN SOBRE LA UTILIDAD DE LA IA:
+La IA aportó valor al cruzar cada requisito con evidencia concreta. Declarar los
+pendientes externos —retroalimentación docente y empaquetado final— es más
+responsable que marcar cumplimiento sin respaldo.
+
+================================================================================

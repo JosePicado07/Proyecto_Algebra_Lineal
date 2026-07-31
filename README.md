@@ -31,15 +31,10 @@ En Linux, Tkinter puede requerir un paquete del sistema, por ejemplo
 
 ## Instalación
 
-Desde la carpeta raíz del proyecto:
-
-```bash
-python -m venv .venv
-```
-
-En Windows PowerShell:
+Desde la carpeta raíz del proyecto, en Windows PowerShell:
 
 ```powershell
+py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
@@ -47,15 +42,18 @@ python -m pip install -r requirements.txt
 En macOS o Linux:
 
 ```bash
+python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ## Ejecutar la interfaz
 
 ```bash
-python src/interfaz.py
+python3 src/interfaz.py
 ```
+
+En Windows puede sustituir `python3` por `python`.
 
 La ventana permite:
 
@@ -82,19 +80,19 @@ El caso solicitado en la consigna rota 30 grados, escala por 1.5 y traslada
 por `(2, 1)`:
 
 ```bash
-python src/interfaz.py --demo
+python3 src/interfaz.py --demo
 ```
 
 También puede guardar el gráfico:
 
 ```bash
-python src/interfaz.py --demo --grafico comparacion.png
+python3 src/interfaz.py --demo --grafico comparacion.png
 ```
 
 El flujo integrado original continúa disponible:
 
 ```bash
-python src/main.py
+python3 src/main.py
 ```
 
 ## Pruebas
@@ -102,13 +100,25 @@ python src/main.py
 Ejecute todas las pruebas con:
 
 ```bash
-python -m unittest discover -s tests -p "test_*.py" -v
+python3 -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 La verificación cubre creación y clonación de objetos, algoritmos de análisis,
 las cuatro transformaciones, composición e historial, integración completa y
 la lógica independiente de la interfaz. También valida rectas homogéneas,
 rectas afines, todo `R²` y el conjunto vacío en el análisis de subespacios.
+
+## Documentación final
+
+Las fuentes editables están en `docs/informe_tecnico.md` y
+`docs/bitacora_ia_grupal.md`. Para volver a generar los PDF y sus figuras:
+
+```bash
+python3 docs/generar_documentacion.py
+```
+
+El comando produce `Informe_Tecnico.pdf`, `Bitacora_IA_Grupal.pdf` y los
+recursos gráficos de `docs/assets/`.
 
 ## Estructura
 
@@ -130,7 +140,13 @@ Proyecto_Algebra_Lineal/
 ├── docs/
 │   ├── bitacoras/
 │   ├── explicaciones/
-│   └── pseudocodigos/
+│   ├── pseudocodigos/
+│   ├── assets/
+│   ├── informe_tecnico.md
+│   ├── bitacora_ia_grupal.md
+│   └── MATRIZ_CUMPLIMIENTO.md
+├── Informe_Tecnico.pdf
+├── Bitacora_IA_Grupal.pdf
 ├── requirements.txt
 └── README.md
 ```
